@@ -22,24 +22,24 @@ if uploaded_file is not None:
         st.stop()
     df['Country'] = df['Country'].astype(str).str.strip().str.upper()
 
-    if 'Start' not in df.columns:
-        st.error("❌ Column 'Start' missing!")
+    if 'End' not in df.columns:
+        st.error("❌ Column 'End' missing!")
         st.stop()
-    df['Start'] = pd.to_datetime(
-        df['Start'].astype(str).str.strip().str.replace(r"[-_.\\]", "/", regex=True),
+
+    df['End'] = pd.to_datetime(
+        df['End'].astype(str).str.strip().str.replace(r"[-_.\\]", "/", regex=True),
         errors='coerce', infer_datetime_format=True, dayfirst=False
     ).dt.date
 
-    parsed = df['Start'].notna().sum()
-    # Informacja o sparsowanych datach ukryta przed klientem
+    parsed = df['End'].notna().sum()
     if parsed == 0:
-        st.error("❌ No valid dates in 'Start'. Check Excel formatting.")
+        st.error("❌ No valid dates in 'End'. Check Excel formatting.")
         st.stop()
 
-    min_date = df['Start'].min()
-    max_date = df['Start'].max()
+    min_date = df['End'].min()
+    max_date = df['End'].max()
     date_range = st.date_input(
-        "📅 Select date range (based on 'Start')",
+        "📅 Select date range (based on 'End')",
         value=(min_date, max_date), min_value=min_date, max_value=max_date
     )
 
@@ -54,8 +54,8 @@ if uploaded_file is not None:
         start_date, end_date = date_range
         mask = (
             (df['Category_norm'] == selected_category) &
-            (df['Start'] >= start_date) &
-            (df['Start'] <= end_date)
+            (df['End'] >= start_date) &          # <-- ZMIANA 1
+            (df['End'] <= end_date)
         )
         filtered_df = df.loc[mask].copy()
         if filtered_df.empty:
@@ -83,6 +83,11 @@ if uploaded_file is not None:
             for country in countries:
                 country_df = filtered_df[filtered_df['Country'] == country].copy()
                 if not country_df.empty:
+
+                    # SORTOWANIE PO DEMAND (ZMIANA 2)
+                    if "Demand" in country_df.columns:
+                        country_df = country_df.sort_values(by="Demand", ascending=False)
+
                     means = country_df[numeric_cols].mean().to_frame().T
                     means.index = ['Average']
 
@@ -138,7 +143,7 @@ if uploaded_file is not None:
                                 if col in ["CVR","% Expected Demand"]:
                                     cell.number_format = '0.00%'
                             else:
-                                # PODSUMOWANIE (ostatni wiersz)
+                                # PODSUMOWANIE
                                 cell.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
                                 cell.border = border
 
@@ -152,7 +157,6 @@ if uploaded_file is not None:
                                 elif col in ["Visits","Orders","Demand","CVR","AOV",
                                              "Expected Demand","Demand Diff to Expected","% Expected Demand"]:
 
-                                    # Jasnoniebieskie wypełnienie
                                     cell.fill = light_blue_fill
 
                                     if col == "Visits" and isinstance(cell.value,float):
@@ -168,7 +172,6 @@ if uploaded_file is not None:
                                         cell.number_format = '0.00%'
 
                                 else:
-                                    # Pola z podsumowania bez wypełnienia
                                     cell.fill = PatternFill(fill_type=None)
 
             # Puste arkusze
@@ -182,5 +185,5 @@ if uploaded_file is not None:
             "📥 Download report",
             data=output,
             file_name=filename,
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            mime="application/vnd.openxmlformats-officedocument-spreadsheetml.sheet"
         )
