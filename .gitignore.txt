@@ -1,0 +1,15 @@
+# Excel files uploaded by user
+*.xlsx
+*.xls
+
+# Virtual environment
+venv/
+.env
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Python cache
+__pycache__/
+*.pyc
