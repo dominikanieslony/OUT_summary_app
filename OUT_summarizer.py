@@ -31,7 +31,7 @@ if uploaded_file is not None:
     ).dt.date
 
     parsed = df['Start'].notna().sum()
-    st.info(f"📅 Parsed {parsed} / {len(df)} dates in 'Start' column")
+    # Informacja o sparsowanych datach ukryta przed klientem
     if parsed == 0:
         st.error("❌ No valid dates in 'Start'. Check Excel formatting.")
         st.stop()
@@ -152,7 +152,7 @@ if uploaded_file is not None:
                                 elif col in ["Visits","Orders","Demand","CVR","AOV",
                                              "Expected Demand","Demand Diff to Expected","% Expected Demand"]:
 
-                                    # Jasnoniebieskie wypełnienie — poprawka tu!
+                                    # Jasnoniebieskie wypełnienie
                                     cell.fill = light_blue_fill
 
                                     if col == "Visits" and isinstance(cell.value,float):
@@ -170,11 +170,6 @@ if uploaded_file is not None:
                                 else:
                                     # Pola z podsumowania bez wypełnienia
                                     cell.fill = PatternFill(fill_type=None)
-
-                else:
-                    pd.DataFrame({"Info": [f"No data for {country}"]}).to_excel(
-                        writer, index=False, sheet_name=str(country)
-                    )
 
             # Puste arkusze
             for empty_sheet in ["Brands", "Category", "Stock level", "Conclusions"]:
