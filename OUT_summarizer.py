@@ -48,15 +48,28 @@ if uploaded_file is not None:
         st.stop()
     df['Category_norm'] = df['Category'].astype(str).str.strip().str.lower()
     categories = sorted(df['Category_norm'].unique())
-    selected_category = st.selectbox("🏷️ Select category", categories)
+    categories_with_all = ["All"] + categories
+
+    # --- ZMIANA: selectbox z opcją "All" ---
+    selected_category = st.selectbox(
+        "🏷️ Select category",
+        categories_with_all,
+        index=0  # domyślnie "All"
+    )
 
     if st.button("🚀 Generate report"):
         start_date, end_date = date_range
-        mask = (
-            (df['Category_norm'] == selected_category) &
-            (df['End'] >= start_date) &          # <-- ZMIANA 1
-            (df['End'] <= end_date)
-        )
+
+        # --- ZMIANA: filtr uwzględniający "All" ---
+        if selected_category == "All":
+            mask = (df['End'] >= start_date) & (df['End'] <= end_date)
+        else:
+            mask = (
+                (df['Category_norm'] == selected_category) &
+                (df['End'] >= start_date) &
+                (df['End'] <= end_date)
+            )
+
         filtered_df = df.loc[mask].copy()
         if filtered_df.empty:
             st.warning("⚠️ No data for these filters.")
@@ -84,7 +97,7 @@ if uploaded_file is not None:
                 country_df = filtered_df[filtered_df['Country'] == country].copy()
                 if not country_df.empty:
 
-                    # SORTOWANIE PO DEMAND (ZMIANA 2)
+                    # SORTOWANIE PO DEMAND
                     if "Demand" in country_df.columns:
                         country_df = country_df.sort_values(by="Demand", ascending=False)
 
