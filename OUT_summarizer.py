@@ -29,7 +29,6 @@ if uploaded_file is not None:
         st.error("❌ Column 'Start' missing!")
         st.stop()
 
-    # YY/MM/DD -> YYYY-MM-DD
     df['Start'] = pd.to_datetime(
         df['Start'].astype(str).str.strip(),
         format="%y/%m/%d",
@@ -99,6 +98,27 @@ if uploaded_file is not None:
         existing_cols = [c for c in keep_cols if c in filtered_df.columns]
         filtered_df = filtered_df[existing_cols]
 
+        # =========================
+        # FIX: NUMERIC COLUMNS AS FLOAT (EUR)
+        # =========================
+        currency_cols = [
+            "Demand",
+            "Expected Demand",
+            "Demand Diff to Expected"
+        ]
+
+        for col in currency_cols:
+            if col in filtered_df.columns:
+                filtered_df[col] = (
+                    filtered_df[col]
+                    .astype(str)
+                    .str.replace("€", "", regex=False)
+                    .str.replace(" ", "", regex=False)
+                    .str.replace(",", ".", regex=False)
+                    .str.replace(r"[^\d\.-]", "", regex=True)
+                )
+                filtered_df[col] = pd.to_numeric(filtered_df[col], errors="coerce")
+
         numeric_cols = [
             'Visits', 'Orders', 'Demand', 'CVR', 'AOV',
             'Expected Demand', 'Demand Diff to Expected', '% Expected Demand'
@@ -166,7 +186,6 @@ if uploaded_file is not None:
                             cell.border = border
                             cell.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
 
-                            # FORMAT DAT
                             if col in ["Start", "End"]:
                                 cell.number_format = "yyyy-mm-dd"
 
@@ -185,6 +204,7 @@ if uploaded_file is not None:
 
                                 if col in ["Demand", "Expected Demand", "Demand Diff to Expected"]:
                                     cell.number_format = '€#,##0.00'
+
                                 if col in ["CVR", "% Expected Demand"]:
                                     cell.number_format = '0.00%'
 
@@ -201,4 +221,5 @@ if uploaded_file is not None:
             file_name=filename,
             mime="application/vnd.openxmlformats-officedocument-spreadsheetml.sheet"
         )
+
 
